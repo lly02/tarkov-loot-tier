@@ -1,6 +1,7 @@
 import puppeteer from "puppeteer";
 import { FLEA_PRICES_PAGE } from "../constants";
 import { Browser } from "puppeteer";
+import { ElementHandle } from "puppeteer";
 
 export default async function scrapeFlea() {
   const browser = await puppeteer.launch({ headless: false });
@@ -24,7 +25,7 @@ export default async function scrapeFlea() {
         for (let mutation of mutationList) {
           if (mutation.addedNodes.length > 0) {
             document.getElementsByClassName("load-more")[0].scrollIntoView();
-            observerTimeout(observer, timeoutId!);
+            timeoutId = observerTimeout(observer, timeoutId!);
           }
         }
       };
@@ -38,10 +39,16 @@ export default async function scrapeFlea() {
       let loadButton: HTMLElement = document.querySelector(
         "div.page-content > div > button"
       )!;
+      loadButton.scrollIntoView();
       loadButton.click();
 
-      console.log(document.getElementsByClassName("load-more")[0]);
-      document.getElementsByClassName("load-more")[0].scrollIntoView();
+      const infiniteScrollTrigger = setInterval(async () => {
+        window.scrollBy(0, -250);
+
+        await new Promise((resolve) => setTimeout(resolve, 250));
+
+        window.scrollBy(0, 10000);
+      }, 1000);
 
       function observerTimeout(
         observer: MutationObserver,
@@ -51,11 +58,16 @@ export default async function scrapeFlea() {
 
         return setTimeout(() => {
           observer.disconnect();
+          clearInterval(infiniteScrollTrigger);
           resolve();
-        }, 5000);
+        }, 10000);
       }
     });
   });
 
   browser.close();
+}
+
+function processCardItems(cardsList: ElementHandle<Element> | null) {
+
 }
